@@ -235,7 +235,21 @@ table > tbody > tr > td {
 #defaultLayout main {
   padding: 10px;
 }
-
+.searchInput {
+  position: relative;
+}
+.searchInput input {
+  width: 89%;
+}
+.searchInput button {
+  width: 10%;
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  outline: none;
+  height: 49.56px;
+  border: none;
+}
 .animated {
   -webkit-animation-duration: 0.3s;
   animation-duration: 0.3s;
@@ -297,7 +311,17 @@ table th {
 .boxButton {
   width: 20px;
 }
+.alertResult {
+  margin-bottom: 10px;
+  font-weight: bold;
+}
 @media screen and (max-width: 970px) {
+  .searchInput input {
+    width: 70%;
+  }
+  .searchInput button {
+    width: 29%;
+  }
   .boxButton {
     width: 100%;
     text-align: right;

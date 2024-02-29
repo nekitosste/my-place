@@ -111,7 +111,7 @@ export default function UserForm() {
                 setPlace({ ...place, comment: ev.target.value })
               }
             />
-            <button className="btn">Save</button>
+            <button className="btn-add">Save</button>
           </form>
         )}
       </div>
