@@ -7,6 +7,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { IconButton } from "@mui/material";
 import ClearIcon from "@mui/icons-material/Clear";
+import SearchIcon from "@mui/icons-material/Search";
+// import { debounce } from "lodash";
 
 export default function Place() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -15,18 +17,47 @@ export default function Place() {
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const { setNotification } = useStateContext();
+
   useEffect(() => {
     getPlace();
   }, []);
 
   const isSearchDisabled = searchQuery.trim() === "";
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     setLoading(true);
-    fetch(`http://localhost:8000/api/search?query=${searchQuery}`)
-      .then((response) => response.json())
-      .then((data) => setSearchResults(data));
+    try {
+      const response = await axiosClient.get(`search?query=${searchQuery}`);
+      if (response.status === 200) {
+        const data = response.data;
+        setSearchResults(data);
+        setPlace(data);
+      } else {
+        console.error(
+          "Server response was not ok:",
+          response.status,
+          response.statusText
+        );
+      }
+    } catch (error) {
+      console.error("Error results:", error);
+    }
     setLoading(false);
+  };
+  // const delayedHandleSearch = debounce(handleSearch, 1000);
+  const searchClean = () => {
+    setSearchResults([]);
+    setSearchQuery("");
+    setLoading(true);
+    axiosClient
+      .get("/address")
+      .then(({ data }) => {
+        setLoading(false);
+        setPlace(data);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
   };
 
   const onDeleteClick = (place) => {
@@ -58,16 +89,29 @@ export default function Place() {
         <input
           type="text"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+            setSearchQuery(e.target.value.toLowerCase());
+            // delayedHandleSearch();
+          }}
           placeholder="Search"
         />
-        <button
-          className="btn-logout"
-          onClick={handleSearch}
-          disabled={isSearchDisabled || searching}
-        >
-          Search
-        </button>
+        <div className="buttonGroup">
+          {searchQuery && (
+            <IconButton
+              color="black"
+              className="clearSearch"
+              onClick={searchClean}
+            >
+              <ClearIcon color="inherit" fontSize="small" />
+            </IconButton>
+          )}
+          <IconButton
+            onClick={handleSearch}
+            disabled={isSearchDisabled || searching}
+          >
+            <SearchIcon color="inherit" fontSize="small" />
+          </IconButton>
+        </div>
       </div>
       <h2 style={{ marginBottom: "10px" }}>My Added Places</h2>
 
@@ -84,129 +128,55 @@ export default function Place() {
           <p>Loading</p>
         </div>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>FIO</th>
-              <th>IP</th>
-              <th>Mac-address</th>
-              <th>Place</th>
-              <th>Comment</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
+        <div>
+          {place.length > 0 ? (
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>FIO</th>
+                  <th>IP</th>
+                  <th>Mac-address</th>
+                  <th>Place</th>
+                  <th>Comment</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
 
-          {searchResults.length > 0 ? (
-            <tbody>
-              {searchResults.map((u) => (
-                <tr key={u.id}>
-                  <td>{u.id}</td>
-                  <td>{u.name}</td>
-                  <td>{u.FIO}</td>
-                  <td>{u.ip}</td>
-                  <td>{u.mac}</td>
-                  <td>{u.place}</td>
-                  <td>{u.comment}</td>
-                  <td className="boxButton">
-                    <Link to={"/place/" + u.id}>
-                      <IconButton color="black">
-                        <EditIcon color="inherit" fontSize="small" />
+              <tbody>
+                {place.map((u) => (
+                  <tr key={u.id}>
+                    <td>{u.id}</td>
+                    <td>{u.name}</td>
+                    <td>{u.FIO}</td>
+                    <td>{u.ip}</td>
+                    <td>{u.mac}</td>
+                    <td>{u.place}</td>
+                    <td>{u.comment}</td>
+                    <td className="boxButton">
+                      <Link to={"/place/" + u.id}>
+                        <IconButton color="black">
+                          <EditIcon color="inherit" fontSize="small" />
+                        </IconButton>
+                      </Link>
+                      &nbsp;
+                      <IconButton
+                        aria-label="delete"
+                        onClick={(ev) => onDeleteClick(u)}
+                      >
+                        <DeleteIcon color="black" fontSize="small" />
                       </IconButton>
-                    </Link>
-                    &nbsp;
-                    <IconButton
-                      aria-label="delete"
-                      onClick={(ev) => onDeleteClick(u)}
-                    >
-                      <DeleteIcon color="black" fontSize="small" />
-                    </IconButton>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           ) : (
-            <tbody>
-              {place.map((u) => (
-                <tr key={u.id}>
-                  <td>{u.id}</td>
-                  <td>{u.name}</td>
-                  <td>{u.FIO}</td>
-                  <td>{u.ip}</td>
-                  <td>{u.mac}</td>
-                  <td>{u.place}</td>
-                  <td>{u.comment}</td>
-                  <td className="boxButton">
-                    <Link to={"/place/" + u.id}>
-                      <IconButton color="black">
-                        <EditIcon color="inherit" fontSize="small" />
-                      </IconButton>
-                    </Link>
-                    &nbsp;
-                    <IconButton
-                      aria-label="delete"
-                      onClick={(ev) => onDeleteClick(u)}
-                    >
-                      <DeleteIcon color="black" fontSize="small" />
-                    </IconButton>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+            <p className="nothingFound">Nothing found</p>
           )}
-        </table>
+        </div>
       )}
-      <div className="card animated fadeInDown">
-        {/* <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>FIO</th>
-              <th>IP</th>
-              <th>Mac-address</th>
-              <th>Place</th>
-              <th>Comment</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          {loading && (
-            <div className="loading">
-              <CircularProgress color="inherit" />
-            </div>
-          )}
-          {!loading && (
-            <tbody>
-              {place.map((u) => (
-                <tr key={u.id}>
-                  <td>{u.id}</td>
-                  <td>{u.name}</td>
-                  <td>{u.FIO}</td>
-                  <td>{u.ip}</td>
-                  <td>{u.mac}</td>
-                  <td>{u.place}</td>
-                  <td>{u.comment}</td>
-                  <td>
-                    <Link to={"/place/" + u.id}>
-                      <IconButton color="primary">
-                        <EditIcon color="inherit" />
-                      </IconButton>
-                    </Link>
-                    &nbsp;
-                    <IconButton
-                      aria-label="delete"
-                      onClick={(ev) => onDeleteClick(u)}
-                    >
-                      <DeleteIcon color="black" />
-                    </IconButton>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          )}
-        </table> */}
-      </div>
     </div>
   );
 }
